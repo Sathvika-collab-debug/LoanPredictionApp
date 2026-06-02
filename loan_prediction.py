@@ -1,127 +1,129 @@
 import streamlit as st
-import pandas as pd
-from sklearn.linear_model import LogisticRegression
 
-# ---------------- Data ----------------
-
-loan_data = pd.read_csv("loan_data.csv")
-
-loan_data.replace({
-    'Gender': {'Male':1,'Female':0},
-    'Married': {'Yes':1,'No':0},
-    'Education': {'Graduate':1,'Not Graduate':0},
-    'Loan_Status': {'Y':1,'N':0}
-}, inplace=True)
-
-loan_data = loan_data.infer_objects(copy=False)
-
-X = loan_data.drop(columns='Loan_Status')
-y = loan_data['Loan_Status'].astype(int)
-
-# ---------------- Train Model ----------------
-
-model = LogisticRegression(max_iter=1000)
-
-model.fit(X,y)
-
-# ---------------- Background Design ----------------
-
-st.markdown("""
-<style>
-
-.stApp{
-background: linear-gradient(to right,#4facfe,#00f2fe);
-}
-
-.title{
-text-align:center;
-font-size:40px;
-font-weight:bold;
-color:white;
-}
-
-.result{
-text-align:center;
-font-size:30px;
-font-weight:bold;
-padding:20px;
-border-radius:15px;
-color:white;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- Title ----------------
-
-st.markdown(
-'<p class="title">🏦 Loan Prediction App</p>',
-unsafe_allow_html=True
+st.set_page_config(
+    page_title="Bank Loan Dashboard",
+    page_icon="🏦",
+    layout="wide"
 )
 
-# ---------------- Sidebar Inputs ----------------
+# TITLE
 
-st.sidebar.title("Enter Details")
+st.title("🏦 Bank Loan Approval Dashboard")
+st.subheader("Smart Loan Eligibility Checker")
 
-gender = st.sidebar.selectbox(
-    "Gender",
-    ["Male","Female"]
-)
+st.markdown("---")
 
-married = st.sidebar.selectbox(
-    "Married",
-    ["Yes","No"]
-)
+# INPUT SECTION
 
-education = st.sidebar.selectbox(
-    "Education",
-    ["Graduate","Not Graduate"]
-)
+st.header("📋 Applicant Details")
 
-income = st.sidebar.number_input(
+col1, col2 = st.columns(2)
+
+with col1:
+
+    gender = st.selectbox(
+        "Gender",
+        ["Male", "Female"]
+    )
+
+    married = st.selectbox(
+        "Married",
+        ["Yes", "No"]
+    )
+
+    education = st.selectbox(
+        "Education",
+        ["Graduate", "Not Graduate"]
+    )
+
+with col2:
+
+    income = st.number_input(
+        "Applicant Income",
+        min_value=0,
+        value=0
+    )
+
+    loan_amount = st.number_input(
+        "Loan Amount",
+        min_value=0,
+        value=0
+    )
+
+    interest_rate = st.number_input(
+        "Rate of Interest (%)",
+        min_value=1.0,
+        max_value=25.0,
+        value=8.5
+    )
+
+st.markdown("---")
+
+# DASHBOARD METRICS
+
+c1, c2, c3 = st.columns(3)
+
+c1.metric(
     "Applicant Income",
-    min_value=0
+    f"₹ {income}"
 )
 
-loan_amount = st.sidebar.number_input(
+c2.metric(
     "Loan Amount",
-    min_value=0
+    f"₹ {loan_amount}"
 )
 
-# ---------------- Convert Inputs ----------------
+c3.metric(
+    "Interest Rate",
+    f"{interest_rate}%"
+)
 
-gender = 1 if gender=="Male" else 0
-married = 1 if married=="Yes" else 0
-education = 1 if education=="Graduate" else 0
+st.markdown("---")
 
-# ---------------- Prediction ----------------
+# PREDICTION
 
-if st.sidebar.button("Predict Loan Status"):
+if st.button("Predict Loan Status"):
 
-    prediction = model.predict([[
-        gender,
-        married,
-        education,
-        income,
-        loan_amount
-    ]])
+    score = 0
 
-    if prediction[0]==1:
+    # SCORE CALCULATION
 
-        st.balloons()
+    if income > loan_amount:
+        score += 2
 
-        st.markdown(
-        '<div class="result">✅ LOAN APPROVED</div>',
-        unsafe_allow_html=True
+    if income > 5000:
+        score += 1
+
+    if education == "Graduate":
+        score += 1
+
+    if interest_rate < 12:
+        score += 1
+
+    st.header("🏦 Decision Result")
+
+    # APPROVAL LOGIC
+
+    if income >= loan_amount:
+
+        st.success(
+            "✅ LOAN APPROVED"
         )
 
-        st.success("Congratulations! Loan Approved")
+        st.write(
+            "Status: Low Risk Applicant"
+        )
 
     else:
 
-        st.markdown(
-        '<div class="result">❌ LOAN REJECTED</div>',
-        unsafe_allow_html=True
+        st.error(
+            "❌ LOAN REJECTED"
         )
 
-        st.error("Sorry! Loan Rejected")
+        st.write(
+            "Status: High Risk Applicant"
+        )
+
+    st.subheader(
+        f"📊 Score: {score}/5"
+    )
